@@ -1,5 +1,7 @@
 Quick PDF viewer with a selectable color-scheme to make reading easy on eyes.
 
+
+## License
 MIT License
 
 Copyright (c) 2026 Contributors
