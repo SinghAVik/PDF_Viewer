@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Open, read, and print PDF files entirely in your browser. Files never leave your device.">
+  <meta name="color-scheme" content="dark">
   <title>Offline PDF Viewer</title>
   <style>
     :root {
@@ -330,6 +332,11 @@
     .switch input:checked + .track .thumb-dot {
       transform: translateX(18px);
       background: var(--accent-bright);
+    }
+
+    .switch input:focus-visible + .track {
+      outline: 2px solid color-mix(in srgb, var(--accent-bright) 76%, transparent);
+      outline-offset: 2px;
     }
 
     .switch input:disabled ~ .track {
@@ -740,7 +747,41 @@
       flex-wrap: wrap;
     }
 
+    .status-panel .shortcut-hint {
+      margin-top: 20px;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .password-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .password-input {
+      width: min(280px, 100%);
+      height: 40px;
+      padding: 0 12px;
+      border-radius: var(--radius);
+      font-size: 15px;
+    }
+
     .hidden { display: none !important; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
 
     .toast {
       position: absolute;
@@ -756,6 +797,7 @@
       box-shadow: var(--shadow);
       font-size: 14px;
       line-height: 1.4;
+      cursor: pointer;
     }
 
     .drop-target {
@@ -863,11 +905,23 @@
       <div class="controls" aria-label="File controls">
         <button class="primary-button" id="openButton" type="button" title="Open PDF" aria-label="Open PDF">
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3v12"></path>
-            <path d="m7 10 5 5 5-5"></path>
-            <path d="M5 21h14"></path>
+            <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H21a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"></path>
           </svg>
           <span>Open</span>
+        </button>
+        <button class="icon-button" id="printButton" type="button" title="Print" aria-label="Print" disabled>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9V3h12v6"></path>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8" rx="1"></rect>
+          </svg>
+        </button>
+        <button class="icon-button" id="downloadButton" type="button" title="Save a copy" aria-label="Save a copy" disabled>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <path d="m7 10 5 5 5-5"></path>
+            <path d="M12 15V3"></path>
+          </svg>
         </button>
       </div>
 
@@ -932,9 +986,9 @@
           </label>
           <div class="swatches" aria-label="Inversion tint presets">
             <button class="swatch is-active" type="button" data-color="#ffffff" style="--swatch: #ffffff" title="Neutral" aria-label="Neutral tint" disabled></button>
-            <button class="swatch" type="button" data-color="#ffd7a8" style="--swatch: #ffd7a8" title="Warm" aria-label="Warm tint" disabled></button>
-            <button class="swatch" type="button" data-color="#b8e7ff" style="--swatch: #b8e7ff" title="Cool" aria-label="Cool tint" disabled></button>
-            <button class="swatch" type="button" data-color="#baffd1" style="--swatch: #baffd1" title="Green" aria-label="Green tint" disabled></button>
+            <button class="swatch" type="button" data-color="#08080A" style="--swatch: #08080A" title="Warm" aria-label="Warm tint" disabled></button>
+            <button class="swatch" type="button" data-color="#0E0D41" style="--swatch: #0E0D41" title="Cool" aria-label="Cool tint" disabled></button>
+            <button class="swatch" type="button" data-color="#0F2909" style="--swatch: #0F2909" title="Green" aria-label="Green tint" disabled></button>
           </div>
           <input class="color-input" id="invertColor" type="color" value="#ffffff" title="Custom inversion tint" aria-label="Custom inversion tint" disabled>
         </div>
@@ -944,12 +998,12 @@
     <main class="viewer" id="viewer" aria-label="PDF document area">
       <aside class="sidebar" id="sidebar" aria-label="Document navigation">
         <div class="sidebar-tabs" role="tablist">
-          <button class="sidebar-tab is-active" id="tabThumbs" type="button" role="tab" data-tab="thumbs" aria-selected="true">Thumbnails</button>
-          <button class="sidebar-tab" id="tabOutline" type="button" role="tab" data-tab="outline" aria-selected="false">Contents</button>
+          <button class="sidebar-tab is-active" id="tabThumbs" type="button" role="tab" data-tab="thumbs" aria-selected="true" aria-controls="thumbsPane">Thumbnails</button>
+          <button class="sidebar-tab" id="tabOutline" type="button" role="tab" data-tab="outline" aria-selected="false" aria-controls="outlinePane">Contents</button>
         </div>
         <div class="sidebar-body">
-          <div class="sidebar-pane thumbs-pane" id="thumbsPane" role="tabpanel" aria-label="Page thumbnails"></div>
-          <div class="sidebar-pane outline-pane hidden" id="outlinePane" role="tabpanel" aria-label="Document contents"></div>
+          <div class="sidebar-pane thumbs-pane" id="thumbsPane" role="tabpanel" tabindex="0" aria-labelledby="tabThumbs"></div>
+          <div class="sidebar-pane outline-pane hidden" id="outlinePane" role="tabpanel" tabindex="0" aria-labelledby="tabOutline"></div>
         </div>
       </aside>
 
@@ -966,13 +1020,12 @@
               <div class="status-actions">
                 <button class="primary-button" id="emptyOpenButton" type="button">
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3v12"></path>
-                    <path d="m7 10 5 5 5-5"></path>
-                    <path d="M5 21h14"></path>
+                    <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H21a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"></path>
                   </svg>
                   <span>Open PDF</span>
                 </button>
               </div>
+              <p class="shortcut-hint">Shortcuts: &larr;/&rarr; or PageUp/PageDown change pages &middot; Home/End jump to first/last &middot; W fits to width &middot; S toggles the sidebar &middot; I inverts colors &middot; Ctrl/&#8984; with +/&minus;/0 zooms, P prints</p>
             </div>
           </div>
 
@@ -984,6 +1037,20 @@
             </div>
           </div>
 
+          <div class="status-layer hidden" id="passwordState">
+            <form class="status-panel" id="passwordForm" autocomplete="off">
+              <h2>Password required</h2>
+              <p id="passwordDetail">This PDF is protected. Enter its password to open it.</p>
+              <div class="password-row">
+                <input class="password-input" id="passwordInput" type="password" autocomplete="off" aria-label="PDF password" placeholder="Password">
+              </div>
+              <div class="status-actions">
+                <button class="primary-button" type="submit">Unlock</button>
+                <button type="button" id="passwordCancel">Cancel</button>
+              </div>
+            </form>
+          </div>
+
           <div class="drop-layer" id="dropLayer">
             <div class="drop-target">
               <strong>Drop PDF to open</strong>
@@ -993,7 +1060,8 @@
         </section>
       </div>
 
-      <div class="toast hidden" id="errorToast" role="status" aria-live="polite"></div>
+      <div class="toast hidden" id="errorToast" role="alert" aria-live="assertive"></div>
+      <div class="sr-only" id="liveRegion" role="status" aria-live="polite"></div>
     </main>
   </div>
 
@@ -1045,10 +1113,13 @@
       let scrollRaf = 0;
       let thumbRaf = 0;
       let resizeRaf = 0;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       const els = {
         sidebarToggle: document.getElementById("sidebarToggle"),
         openButton: document.getElementById("openButton"),
+        printButton: document.getElementById("printButton"),
+        downloadButton: document.getElementById("downloadButton"),
         emptyOpenButton: document.getElementById("emptyOpenButton"),
         fileInput: document.getElementById("fileInput"),
         fileName: document.getElementById("fileName"),
@@ -1077,14 +1148,23 @@
         emptyState: document.getElementById("emptyState"),
         loadingState: document.getElementById("loadingState"),
         loadingDetail: document.getElementById("loadingDetail"),
+        passwordState: document.getElementById("passwordState"),
+        passwordForm: document.getElementById("passwordForm"),
+        passwordInput: document.getElementById("passwordInput"),
+        passwordDetail: document.getElementById("passwordDetail"),
+        passwordCancel: document.getElementById("passwordCancel"),
         dropLayer: document.getElementById("dropLayer"),
-        errorToast: document.getElementById("errorToast")
+        errorToast: document.getElementById("errorToast"),
+        liveRegion: document.getElementById("liveRegion")
       };
 
       function init() {
         els.openButton.addEventListener("click", openFilePicker);
         els.emptyOpenButton.addEventListener("click", openFilePicker);
+        els.printButton.addEventListener("click", printDocument);
+        els.downloadButton.addEventListener("click", downloadDocument);
         els.fileInput.addEventListener("change", handleFileInput);
+        els.errorToast.addEventListener("click", clearError);
         els.sidebarToggle.addEventListener("click", toggleSidebar);
         els.tabThumbs.addEventListener("click", () => setSidebarTab("thumbs"));
         els.tabOutline.addEventListener("click", () => setSidebarTab("outline"));
@@ -1101,6 +1181,7 @@
         els.invertToggle.addEventListener("change", () => {
           state.invertEnabled = els.invertToggle.checked;
           renderInversion();
+          persistPrefs();
         });
         els.invertColor.addEventListener("input", () => setInvertColor(els.invertColor.value));
         els.swatches.forEach((button) => {
@@ -1121,10 +1202,49 @@
         window.addEventListener("resize", onResize);
 
         if (!PDFJS_READY) {
-          showError("Could not load the bundled PDF engine (vendor/pdf.min.js). Make sure the vendor folder sits next to this page.");
+          showError("Could not load the bundled PDF engine (vendor/pdf.min.js). Make sure the vendor folder sits next to this page.", true);
         }
 
+        restorePrefs();
         renderControls();
+      }
+
+      // ---------- Preferences (UI only — no document data is stored) ----------
+      const PREFS_KEY = "offlinePdfViewer:prefs";
+
+      function persistPrefs() {
+        try {
+          localStorage.setItem(PREFS_KEY, JSON.stringify({
+            sidebarOpen: state.sidebarOpen,
+            sidebarTab: state.sidebarTab,
+            invertEnabled: state.invertEnabled,
+            invertColor: state.invertColor
+          }));
+        } catch (_) { /* storage may be unavailable (private mode, quota) */ }
+      }
+
+      function restorePrefs() {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "null"); }
+        catch (_) { saved = null; }
+        if (!saved || typeof saved !== "object") return;
+
+        if (typeof saved.invertEnabled === "boolean") state.invertEnabled = saved.invertEnabled;
+        if (typeof saved.invertColor === "string") {
+          state.invertColor = normalizeHexColor(saved.invertColor);
+          els.invertColor.value = state.invertColor;
+        }
+        // Restore the sidebar-open flag before touching the tab, since
+        // setSidebarTab() persists and would otherwise serialize a stale value.
+        if (typeof saved.sidebarOpen === "boolean") {
+          state.sidebarOpen = saved.sidebarOpen;
+          els.viewer.classList.toggle("is-sidebar-collapsed", !saved.sidebarOpen);
+          els.sidebarToggle.classList.toggle("is-active", saved.sidebarOpen);
+          els.sidebarToggle.setAttribute("aria-pressed", String(saved.sidebarOpen));
+        }
+        if (saved.sidebarTab === "thumbs" || saved.sidebarTab === "outline") {
+          setSidebarTab(saved.sidebarTab);
+        }
       }
 
       function openFilePicker() {
@@ -1148,7 +1268,9 @@
       }
 
       function handleDragLeave(event) {
-        if (event.target === window || event.clientX <= 0 || event.clientY <= 0 ||
+        // relatedTarget is null when the pointer leaves the window entirely;
+        // the coordinate checks catch the same case in older browsers.
+        if (event.relatedTarget === null || event.clientX <= 0 || event.clientY <= 0 ||
           event.clientX >= window.innerWidth || event.clientY >= window.innerHeight) {
           els.dropLayer.classList.remove("is-visible");
         }
@@ -1169,7 +1291,7 @@
 
       async function loadFile(file) {
         if (!PDFJS_READY) {
-          showError("The PDF engine is unavailable, so this file cannot be opened.");
+          showError("The PDF engine is unavailable, so this file cannot be opened.", true);
           return;
         }
 
@@ -1191,9 +1313,23 @@
           if (token !== state.docToken) return;
 
           state.loadTask = pdfjsLib.getDocument({ data: new Uint8Array(data) });
+          state.loadTask.onProgress = (progress) => {
+            if (token !== state.docToken || !progress || !progress.total) return;
+            const pct = clamp(Math.round((progress.loaded / progress.total) * 100), 0, 100);
+            els.loadingDetail.textContent = `Opening ${file.name} — ${pct}%`;
+          };
+          state.loadTask.onPassword = (updatePassword, reason) => {
+            if (token !== state.docToken) return;
+            promptForPassword(reason, updatePassword, token, file);
+          };
           const pdfDoc = await state.loadTask.promise;
           state.loadTask = null;
           if (token !== state.docToken) { try { await pdfDoc.destroy(); } catch (_) {} return; }
+
+          if (!pdfDoc.numPages) {
+            try { await pdfDoc.destroy(); } catch (_) {}
+            throw new Error("This PDF has no pages to display.");
+          }
 
           state.file = file;
           state.pdfDoc = pdfDoc;
@@ -1210,6 +1346,7 @@
 
           els.emptyState.classList.add("hidden");
           els.loadingState.classList.add("hidden");
+          els.passwordState.classList.add("hidden");
 
           buildPages();
           buildThumbs();
@@ -1223,7 +1360,7 @@
         } catch (error) {
           if (token !== state.docToken) return;
           resetToEmpty();
-          showError(describeLoadError(error));
+          showError(describeLoadError(error), true);
         }
       }
 
@@ -1240,17 +1377,23 @@
         renderedPages.clear();
         renderedThumbs.clear();
         els.loadingState.classList.add("hidden");
+        els.passwordState.classList.add("hidden");
         els.emptyState.classList.remove("hidden");
         renderControls();
       }
 
       async function teardownDocument() {
+        // Abort a still-loading document so a superseded open releases its worker.
+        if (state.loadTask) {
+          try { state.loadTask.destroy(); } catch (_) {}
+          state.loadTask = null;
+        }
         renderedPages.forEach((n) => freePage(n));
         renderedThumbs.forEach((n) => freeThumb(n));
         renderedPages.clear();
         renderedThumbs.clear();
-        pages.forEach((p) => { if (p.task) { try { p.task.cancel(); } catch (_) {} } });
-        thumbs.forEach((t) => { if (t.task) { try { t.task.cancel(); } catch (_) {} } });
+        pages.forEach((p) => { if (p.task && typeof p.task.cancel === "function") { try { p.task.cancel(); } catch (_) {} } });
+        thumbs.forEach((t) => { if (t.task && typeof t.task.cancel === "function") { try { t.task.cancel(); } catch (_) {} } });
         els.pagesContainer.replaceChildren();
         els.thumbsPane.replaceChildren();
         els.outlinePane.replaceChildren();
@@ -1306,6 +1449,7 @@
           item.type = "button";
           item.className = "thumb-item";
           item.dataset.page = String(i);
+          item.setAttribute("aria-label", `Page ${i}`);
           const cwrap = document.createElement("span");
           cwrap.className = "thumb-canvas-wrap";
           const ratio = state.baseDims.h / state.baseDims.w;
@@ -1356,6 +1500,7 @@
           twisty.className = "outline-twisty" + (hasKids ? "" : " is-empty");
           twisty.textContent = "▾"; // ▾
           twisty.setAttribute("aria-label", "Toggle section");
+          if (hasKids) twisty.setAttribute("aria-expanded", "true");
 
           const link = document.createElement("button");
           link.type = "button";
@@ -1374,6 +1519,7 @@
             twisty.addEventListener("click", () => {
               const collapsed = children.classList.toggle("is-collapsed");
               twisty.textContent = collapsed ? "▸" : "▾"; // ▸ / ▾
+              twisty.setAttribute("aria-expanded", String(!collapsed));
             });
             li.appendChild(children);
           }
@@ -1398,7 +1544,7 @@
       function computeScale() {
         if (state.zoomMode === "fit") {
           const cs = getComputedStyle(els.pagesContainer);
-          const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+          const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
           const avail = els.docScroll.clientWidth - padX;
           const s = avail > 0 ? avail / state.baseDims.w : 1;
           state.scale = clamp(s, MIN_SCALE, MAX_SCALE);
@@ -1447,11 +1593,12 @@
         const p = pages[num - 1];
         if (!p || p.rendered || p.task) return;
         const token = state.docToken;
+        p.task = true; // claim the slot before awaiting so a concurrent scroll can't double-render
         let page;
         try {
           page = await state.pdfDoc.getPage(num);
-        } catch (_) { return; }
-        if (token !== state.docToken) return;
+        } catch (_) { p.task = null; return; }
+        if (token !== state.docToken) { p.task = null; return; }
 
         // Correct placeholder size if this page differs from the seed.
         const unscaled = page.getViewport({ scale: 1 });
@@ -1478,7 +1625,13 @@
           await p.task.promise;
         } catch (error) {
           p.task = null;
-          return; // RenderingCancelledException or doc gone
+          // A cancellation (zoom change, teardown, doc swap) is expected and
+          // silent. A genuine failure must not leave the spinner forever.
+          if (token === state.docToken && error && error.name !== "RenderingCancelledException") {
+            p.wrap.classList.add("is-rendered"); // hide the spinner; paper stays blank
+            showError(`Page ${num} could not be rendered.`);
+          }
+          return;
         }
         if (token !== state.docToken) { p.task = null; return; }
         p.task = null;
@@ -1504,7 +1657,8 @@
       function freePage(num) {
         const p = pages[num - 1];
         if (!p) return;
-        if (p.task) { try { p.task.cancel(); } catch (_) {} p.task = null; }
+        if (p.task && typeof p.task.cancel === "function") { try { p.task.cancel(); } catch (_) {} }
+        p.task = null;
         p.canvas.width = 0;
         p.canvas.height = 0;
         p.canvas.classList.remove("is-rendered");
@@ -1535,11 +1689,12 @@
         const t = thumbs[num - 1];
         if (!t || t.rendered || t.task) return;
         const token = state.docToken;
+        t.task = true; // claim the slot before awaiting (see renderPage)
         let page;
         try {
           page = await state.pdfDoc.getPage(num);
-        } catch (_) { return; }
-        if (token !== state.docToken) return;
+        } catch (_) { t.task = null; return; }
+        if (token !== state.docToken) { t.task = null; return; }
 
         const unscaled = page.getViewport({ scale: 1 });
         const scale = THUMB_WIDTH / unscaled.width;
@@ -1584,7 +1739,8 @@
       function freeThumb(num) {
         const t = thumbs[num - 1];
         if (!t) return;
-        if (t.task) { try { t.task.cancel(); } catch (_) {} t.task = null; }
+        if (t.task && typeof t.task.cancel === "function") { try { t.task.cancel(); } catch (_) {} }
+        t.task = null;
         t.canvas.width = 0;
         t.canvas.height = 0;
         t.rendered = false;
@@ -1632,7 +1788,10 @@
 
       function highlightCurrent() {
         thumbs.forEach((t, i) => {
-          t.item.classList.toggle("is-current", i + 1 === state.page);
+          const isCurrent = i + 1 === state.page;
+          t.item.classList.toggle("is-current", isCurrent);
+          if (isCurrent) t.item.setAttribute("aria-current", "page");
+          else t.item.removeAttribute("aria-current");
         });
         els.outlinePane.querySelectorAll(".outline-link.is-current")
           .forEach((el) => el.classList.remove("is-current"));
@@ -1656,6 +1815,7 @@
         }
         updatePageUI();
         updatePageRendering();
+        announce(`Page ${target} of ${state.pageCount}`);
       }
 
       function handlePageInput() {
@@ -1736,14 +1896,17 @@
         els.viewer.classList.toggle("is-sidebar-collapsed", !open);
         els.sidebarToggle.classList.toggle("is-active", open);
         els.sidebarToggle.setAttribute("aria-pressed", String(open));
+        persistPrefs();
         if (open) {
           updateThumbRendering();
           highlightCurrent();
         }
-        // The document width changes with the sidebar. Re-fit on the next
-        // frame (covers reduced-motion / no transition) and again on
-        // transitionend (covers the animated case, using the final width).
-        requestAnimationFrame(refitForWidth);
+        // The document width changes with the sidebar. When the slide is
+        // animated, the transitionend handler refits using the final width.
+        // When motion is reduced there is no transition (so no event), so refit
+        // on the next frame instead — avoiding a double refit at an intermediate
+        // width in the animated case.
+        if (prefersReducedMotion.matches) requestAnimationFrame(refitForWidth);
       }
 
       function refitForWidth() {
@@ -1761,6 +1924,7 @@
         els.tabOutline.setAttribute("aria-selected", String(!isThumbs));
         els.thumbsPane.classList.toggle("hidden", !isThumbs);
         els.outlinePane.classList.toggle("hidden", isThumbs);
+        persistPrefs();
         if (isThumbs) {
           updateThumbRendering();
           highlightCurrent();
@@ -1773,6 +1937,7 @@
         els.invertColor.value = state.invertColor;
         renderInversion();
         renderSwatches();
+        persistPrefs();
       }
 
       function renderInversion() {
@@ -1804,7 +1969,7 @@
       function renderControls() {
         const enabled = state.hasDocument;
         const controls = [
-          els.sidebarToggle, els.prevPage, els.nextPage, els.pageInput,
+          els.sidebarToggle, els.printButton, els.downloadButton, els.prevPage, els.nextPage, els.pageInput,
           els.zoomOut, els.zoomIn, els.fitWidth, els.resetZoom,
           els.invertToggle, els.invertColor, els.tabThumbs, els.tabOutline,
           ...els.swatches
@@ -1827,11 +1992,15 @@
 
         if (enabled && state.file) {
           els.fileName.textContent = state.file.name;
-          const pages = state.pageCount ? `${state.pageCount} page${state.pageCount === 1 ? "" : "s"}` : "Page count unavailable";
-          els.fileMeta.textContent = `${formatBytes(state.file.size)} · ${pages}`;
+          els.fileName.title = state.file.name;
+          const pageLabel = state.pageCount ? `${state.pageCount} page${state.pageCount === 1 ? "" : "s"}` : "Page count unavailable";
+          els.fileMeta.textContent = `${formatBytes(state.file.size)} · ${pageLabel}`;
+          document.title = `${state.file.name} — Offline PDF Viewer`;
         } else {
           els.fileName.textContent = "Offline PDF Viewer";
+          els.fileName.removeAttribute("title");
           els.fileMeta.textContent = "Open a local PDF file";
+          document.title = "Offline PDF Viewer";
         }
 
         renderInversion();
@@ -1842,29 +2011,145 @@
       function showLoading(message) {
         els.loadingDetail.textContent = message;
         els.emptyState.classList.add("hidden");
+        els.passwordState.classList.add("hidden");
         els.loadingState.classList.remove("hidden");
       }
 
-      function showError(message) {
+      let errorTimer = 0;
+
+      function showError(message, persist) {
         els.errorToast.textContent = message;
         els.errorToast.classList.remove("hidden");
+        if (errorTimer) { clearTimeout(errorTimer); errorTimer = 0; }
+        // Critical failures stay until clicked; transient notices auto-dismiss.
+        if (!persist) errorTimer = setTimeout(clearError, 8000);
       }
 
       function clearError() {
+        if (errorTimer) { clearTimeout(errorTimer); errorTimer = 0; }
         els.errorToast.classList.add("hidden");
         els.errorToast.textContent = "";
+      }
+
+      let announceTimer = 0;
+
+      function announce(message) {
+        // Clear first, then set on a later tick so assistive tech registers the
+        // change and re-announces even when the message text is unchanged.
+        els.liveRegion.textContent = "";
+        if (announceTimer) clearTimeout(announceTimer);
+        announceTimer = setTimeout(() => {
+          announceTimer = 0;
+          els.liveRegion.textContent = message;
+        }, 50);
+      }
+
+      function downloadDocument() {
+        if (!state.hasDocument || !state.file) return;
+        const url = URL.createObjectURL(state.file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = state.file.name || "document.pdf";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+
+      function printDocument() {
+        if (!state.hasDocument || !state.file) return;
+        // Print the original PDF (vector, every page) through a hidden frame
+        // rather than the virtualized on-screen canvases. Falls back to opening
+        // the file in a new tab if the frame can't be printed directly.
+        const url = URL.createObjectURL(state.file);
+        const frame = document.createElement("iframe");
+        frame.setAttribute("aria-hidden", "true");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+        let done = false;
+        const cleanup = () => {
+          if (done) return;
+          done = true;
+          frame.remove();
+          URL.revokeObjectURL(url);
+        };
+        frame.addEventListener("load", () => {
+          try {
+            const win = frame.contentWindow;
+            win.focus();
+            win.addEventListener("afterprint", cleanup, { once: true });
+            win.print();
+            setTimeout(cleanup, 60000); // safety net if afterprint never fires
+          } catch (_) {
+            window.open(url, "_blank", "noopener");
+            cleanup();
+          }
+        });
+        frame.addEventListener("error", () => {
+          window.open(url, "_blank", "noopener");
+          cleanup();
+        });
+        frame.src = url;
+        document.body.appendChild(frame);
+      }
+
+      function promptForPassword(reason, updatePassword, token, file) {
+        const responses = pdfjsLib.PasswordResponses;
+        const wasWrong = responses ? reason === responses.INCORRECT_PASSWORD : reason === 2;
+        els.loadingState.classList.add("hidden");
+        els.emptyState.classList.add("hidden");
+        els.passwordDetail.textContent = wasWrong
+          ? "That password was incorrect. Please try again."
+          : `Enter the password for ${file.name}.`;
+        els.passwordInput.value = "";
+        els.passwordState.classList.remove("hidden");
+        els.passwordInput.focus();
+
+        function cleanup() {
+          els.passwordForm.removeEventListener("submit", onSubmit);
+          els.passwordCancel.removeEventListener("click", onCancel);
+          els.passwordInput.removeEventListener("keydown", onKey);
+        }
+        function onSubmit(event) {
+          event.preventDefault();
+          cleanup();
+          els.passwordState.classList.add("hidden");
+          if (token !== state.docToken) return; // a newer open superseded this one
+          showLoading(`Opening ${file.name}`);
+          updatePassword(els.passwordInput.value);
+        }
+        function onCancel() {
+          cleanup();
+          els.passwordState.classList.add("hidden");
+          // Abort the protected load; bump the token so the rejection that
+          // follows destroy() is ignored by loadFile's catch.
+          if (state.loadTask) { try { state.loadTask.destroy(); } catch (_) {} state.loadTask = null; }
+          state.docToken++;
+          resetToEmpty();
+        }
+        function onKey(event) {
+          if (event.key === "Escape") { event.preventDefault(); onCancel(); }
+        }
+        els.passwordForm.addEventListener("submit", onSubmit);
+        els.passwordCancel.addEventListener("click", onCancel);
+        els.passwordInput.addEventListener("keydown", onKey);
       }
 
       function handleKeyboard(event) {
         if (event.target instanceof HTMLInputElement) return;
         if (!state.hasDocument) return;
 
-        if (event.key === "ArrowLeft") {
+        if (event.key === "ArrowLeft" || event.key === "PageUp") {
           event.preventDefault();
           goToPage(state.page - 1);
-        } else if (event.key === "ArrowRight") {
+        } else if (event.key === "ArrowRight" || event.key === "PageDown") {
           event.preventDefault();
           goToPage(state.page + 1);
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          goToPage(1);
+        } else if (event.key === "End") {
+          event.preventDefault();
+          goToPage(state.pageCount);
         } else if ((event.metaKey || event.ctrlKey) && (event.key === "=" || event.key === "+")) {
           event.preventDefault();
           stepZoom(1);
@@ -1874,11 +2159,18 @@
         } else if ((event.metaKey || event.ctrlKey) && event.key === "0") {
           event.preventDefault();
           resetZoom();
+        } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
+          event.preventDefault();
+          printDocument();
+        } else if (event.key.toLowerCase() === "w" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+          event.preventDefault();
+          fitWidth();
         } else if (event.key.toLowerCase() === "i" && !event.metaKey && !event.ctrlKey && !event.altKey) {
           event.preventDefault();
           state.invertEnabled = !state.invertEnabled;
           els.invertToggle.checked = state.invertEnabled;
           renderInversion();
+          persistPrefs();
         } else if (event.key.toLowerCase() === "s" && !event.metaKey && !event.ctrlKey && !event.altKey) {
           event.preventDefault();
           toggleSidebar();
